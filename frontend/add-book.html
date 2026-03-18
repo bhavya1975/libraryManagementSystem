@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Add Book - Library System</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  
+<nav>
+  <h1>Library DBMS</h1>
+  <a href="index.html" class="">Dashboard</a>
+  <a href="add-book.html" class="active">Add Book</a>
+  <a href="register-member.html" class="">Register Member</a>
+  <a href="issue-book.html" class="">Issue Book</a>
+  <a href="return-book.html" class="">Return Book</a>
+  <a href="search-book.html" class="">Search Book</a>
+  <a href="overdue.html" class="">View Overdue</a>
+</nav>
+
+  <main>
+    <h2 class="header-title">Add New Book</h2>
+    <div class="card">
+      <form id="form" onsubmit="submitForm(event)">
+        <div class="form-group">
+          <label>Book Title</label>
+          <input type="text" id="title" required placeholder="The Great Gatsby">
+        </div>
+        <div class="form-group">
+          <label>ISBN</label>
+          <input type="text" id="isbn" required placeholder="978-3-16-148410-0">
+        </div>
+        <div class="form-group">
+          <label>Publisher</label>
+          <input type="text" id="publisher" placeholder="Scribner">
+        </div>
+        <div class="form-group">
+          <label>Publication Year</label>
+          <input type="number" id="year" placeholder="1925">
+        </div>
+        <div class="form-group">
+          <label>Category</label>
+          <select id="category" required><option value="">Loading categories...</option></select>
+        </div>
+        <div class="form-group">
+          <label>Authors (Hold Ctrl/Cmd to select multiple)</label>
+          <select id="authors" multiple required style="height: 100px;"></select>
+        </div>
+        <div class="form-group">
+          <label>Number of Initial Copies</label>
+          <input type="number" id="copies" value="1" min="1" required>
+        </div>
+        <button type="submit" class="btn">Save Book & Copies to Oracle</button>
+      </form>
+      <div id="status" class="status"></div>
+    </div>
+  </main>
+  <script src="script.js"></script>
+  <script>
+    async function load() {
+      const [cRes, aRes] = await Promise.all([fetch('/api/categories'), fetch('/api/authors')]);
+      const cats = await cRes.json();
+      const auths = await aRes.json();
+      document.getElementById('category').innerHTML = '<option value="">Select Category</option>' + cats.map(c => `<option value="${c.category_id}">${c.category_name}</option>`).join('');
+      document.getElementById('authors').innerHTML = auths.map(a => `<option value="${a.author_id}">${a.name}</option>`).join('');
+    }
+    load();
+
+    async function submitForm(e) {
+      e.preventDefault();
+      const author_ids = Array.from(document.getElementById('authors').selectedOptions).map(opt => Number(opt.value));
+      const payload = {
+        title: document.getElementById('title').value,
+        isbn: document.getElementById('isbn').value,
+        publisher: document.getElementById('publisher').value,
+        publication_year: document.getElementById('year').value ? Number(document.getElementById('year').value) : null,
+        category_id: Number(document.getElementById('category').value),
+        author_ids,
+        number_of_copies: Number(document.getElementById('copies').value)
+      };
+
+      try {
+        const res = await fetch('/api/books', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload)
+        });
+        if (res.ok) {
+          showStatus('status', 'Book and Copies securely saved!', true);
+          document.getElementById('form').reset();
+        } else {
+          showStatus('status', 'Error saving book. Is ISBN unique?', false);
+        }
+      } catch (err) {
+        showStatus('status', 'Network Error', false);
+      }
+    }
+  </script>
+</body>
+</html>

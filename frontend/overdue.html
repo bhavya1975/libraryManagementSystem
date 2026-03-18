@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Overdue - Library System</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  
+<nav>
+  <h1>Library DBMS</h1>
+  <a href="index.html" class="">Dashboard</a>
+  <a href="add-book.html" class="">Add Book</a>
+  <a href="register-member.html" class="">Register Member</a>
+  <a href="issue-book.html" class="">Issue Book</a>
+  <a href="return-book.html" class="">Return Book</a>
+  <a href="search-book.html" class="">Search Book</a>
+  <a href="overdue.html" class="active">View Overdue</a>
+</nav>
+
+  <main>
+    <h2 class="header-title">Overdue Logs</h2>
+    <div class="card table-container">
+      <table>
+        <thead>
+          <tr>
+            <th>Issue ID</th>
+            <th>Member</th>
+            <th>Book Title</th>
+            <th>Copy ID</th>
+            <th>Issue Date</th>
+            <th>Due Date</th>
+            <th>Days Overdue</th>
+          </tr>
+        </thead>
+        <tbody id="tbody">
+          <tr><td colspan="7">Loading...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </main>
+  <script src="script.js"></script>
+  <script>
+    async function load() {
+      try {
+        const res = await fetch('/api/overdue');
+        const data = await res.json();
+        const tbody = document.getElementById('tbody');
+        if (data.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="7">No overdue books right now!</td></tr>';
+          return;
+        }
+        tbody.innerHTML = data.map(r => `
+          <tr>
+            <td>${r.issue_id}</td>
+            <td>${r.member_name} (#${r.member_id})</td>
+            <td>${r.title}</td>
+            <td>${r.copy_id}</td>
+            <td>${r.issue_date ? r.issue_date.substring(0, 10) : ''}</td>
+            <td>${r.due_date ? r.due_date.substring(0, 10) : ''}</td>
+            <td style="color: var(--danger); font-weight: bold;">${r.days_overdue} days</td>
+          </tr>
+        `).join('');
+      } catch (e) {
+        document.getElementById('tbody').innerHTML = '<tr><td colspan="7">Error loading overdue books</td></tr>';
+      }
+    }
+    load();
+  </script>
+</body>
+</html>

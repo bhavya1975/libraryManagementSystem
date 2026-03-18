@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Return Book - Library System</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  
+<nav>
+  <h1>Library DBMS</h1>
+  <a href="index.html" class="">Dashboard</a>
+  <a href="add-book.html" class="">Add Book</a>
+  <a href="register-member.html" class="">Register Member</a>
+  <a href="issue-book.html" class="">Issue Book</a>
+  <a href="return-book.html" class="active">Return Book</a>
+  <a href="search-book.html" class="">Search Book</a>
+  <a href="overdue.html" class="">View Overdue</a>
+</nav>
+
+  <main>
+    <h2 class="header-title">Return Book</h2>
+    <div class="card">
+      <form id="form" onsubmit="submitForm(event)">
+        <div class="form-group">
+          <label>Active Book Issue</label>
+          <select id="issue" required><option value="">Loading actively issued books...</option></select>
+        </div>
+        <button type="submit" class="btn">Process Return</button>
+      </form>
+      <div id="status" class="status"></div>
+    </div>
+  </main>
+  <script src="script.js"></script>
+  <script>
+    async function load() {
+      try {
+        const res = await fetch('/api/issues/current');
+        const issues = await res.json();
+        const issueEl = document.getElementById('issue');
+        if (issues.length === 0) {
+          issueEl.innerHTML = '<option value="">No active issues found!</option>';
+          issueEl.disabled = true;
+        } else {
+          issueEl.innerHTML = '<option value="">Select the book to return...</option>' + 
+            issues.map(i => `<option value="${i.issue_id}">${i.title} (Copy #${i.copy_id}) - Issued to ${i.member_name}</option>`).join('');
+          issueEl.disabled = false;
+        }
+      } catch (e) { }
+    }
+    load();
+
+    async function submitForm(e) {
+      e.preventDefault();
+      const payload = { issue_id: Number(document.getElementById('issue').value) };
+      try {
+        const res = await fetch('/api/return', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload)
+        });
+        if (res.ok) {
+          showStatus('status', 'Book returned! Triggers computed fine/status.', true);
+          load(); // reload the list
+        } else {
+          showStatus('status', 'Error returning book', false);
+        }
+      } catch (err) {
+        showStatus('status', 'Network Error', false);
+      }
+    }
+  </script>
+</body>
+</html>

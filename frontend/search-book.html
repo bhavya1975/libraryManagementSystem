@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Search Books - Library System</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  
+<nav>
+  <h1>Library DBMS</h1>
+  <a href="index.html" class="">Dashboard</a>
+  <a href="add-book.html" class="">Add Book</a>
+  <a href="register-member.html" class="">Register Member</a>
+  <a href="issue-book.html" class="">Issue Book</a>
+  <a href="return-book.html" class="">Return Book</a>
+  <a href="search-book.html" class="active">Search Book</a>
+  <a href="overdue.html" class="">View Overdue</a>
+</nav>
+
+  <main>
+    <h2 class="header-title">Search Directory</h2>
+    <div class="card">
+      <form id="form" onsubmit="submitForm(event)">
+        <div class="dashboard-grid" style="gap: 1rem; margin-bottom: 0;">
+          <div class="form-group">
+            <label>Title</label>
+            <input type="text" id="title" placeholder="Search by title...">
+          </div>
+          <div class="form-group">
+            <label>Author</label>
+            <input type="text" id="author" placeholder="Search by author...">
+          </div>
+          <div class="form-group">
+            <label>Category</label>
+            <input type="text" id="category" placeholder="Search by category...">
+          </div>
+        </div>
+        <button type="submit" class="btn" style="width: auto;">Search Database</button>
+      </form>
+    </div>
+    
+    <div class="table-container card" style="margin-top: 2rem;">
+      <table>
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Title</th>
+            <th>ISBN</th>
+            <th>Category</th>
+            <th>Author(s)</th>
+            <th>Year</th>
+          </tr>
+        </thead>
+        <tbody id="tbody">
+        </tbody>
+      </table>
+    </div>
+  </main>
+  <script src="script.js"></script>
+  <script>
+    async function submitForm(e) {
+      if(e) e.preventDefault();
+      const t = document.getElementById('title').value;
+      const a = document.getElementById('author').value;
+      const c = document.getElementById('category').value;
+      
+      const params = new URLSearchParams();
+      if (t) params.append('title', t);
+      if (a) params.append('author', a);
+      if (c) params.append('category', c);
+      
+      const res = await fetch(`/api/books?${params.toString()}`);
+      const data = await res.json();
+      
+      document.getElementById('tbody').innerHTML = data.map(b => `
+        <tr>
+          <td>${b.book_id}</td>
+          <td>${b.title}</td>
+          <td>${b.isbn}</td>
+          <td>${b.category_name || ''}</td>
+          <td>${b.authors || ''}</td>
+          <td>${b.publication_year || ''}</td>
+        </tr>
+      `).join('');
+    }
+    submitForm(); // initial load
+  </script>
+</body>
+</html>

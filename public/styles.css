@@ -1,0 +1,109 @@
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background: #ffabdd;
+  color: #222;
+}
+
+header {
+  background: #1f2937;
+  color: #ffffff;
+  padding: 1rem 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+header h1 {
+  margin: 0;
+  font-size: 1.3rem;
+}
+
+nav button {
+  margin-left: 0.5rem;
+  padding: 0.4rem 0.8rem;
+  border-radius: 4px;
+  border: none;
+  cursor: pointer;
+  background: #374151;
+  color: #fff;
+}
+
+nav button:hover {
+  background: #4b5563;
+}
+
+main {
+  padding: 1.5rem 2rem;
+}
+
+.card {
+  background: #fff;
+  border-radius: 6px;
+  padding: 1rem 1.5rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  margin-bottom: 1rem;
+}
+
+form {
+  display: grid;
+  gap: 0.6rem;
+  max-width: 420px;
+}
+
+label {
+  font-size: 0.9rem;
+}
+
+input,
+select {
+  padding: 0.4rem 0.5rem;
+  border-radius: 4px;
+  border: 1px solid #d1d5db;
+}
+
+button.primary {
+  margin-top: 0.4rem;
+  padding: 0.45rem 0.9rem;
+  border-radius: 4px;
+  border: none;
+  cursor: pointer;
+  background: #2563eb;
+  color: #fff;
+}
+
+button.primary:hover {
+  background: #1d4ed8;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 1rem;
+  font-size: 0.9rem;
+}
+
+th,
+td {
+  border-bottom: 1px solid #e5e7eb;
+  padding: 0.5rem;
+  text-align: left;
+}
+
+th {
+  background: #f3f4f6;
+}
+
+.status {
+  margin-top: 0.5rem;
+  font-size: 0.9rem;
+}
+
+.status.ok {
+  color: #15803d;
+}
+
+.status.error {
+  color: #b91c1c;
+}
+
