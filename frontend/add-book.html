@@ -43,8 +43,13 @@
           <select id="category" required><option value="">Loading categories...</option></select>
         </div>
         <div class="form-group">
-          <label>Authors (Hold Ctrl/Cmd to select multiple)</label>
-          <select id="authors" multiple required style="height: 100px;"></select>
+          <label>Author Name(s)</label>
+          <input
+            type="text"
+            id="author_names"
+            required
+            placeholder="e.g. J. K. Rowling, George Orwell"
+          >
         </div>
         <div class="form-group">
           <label>Number of Initial Copies</label>
@@ -58,24 +63,26 @@
   <script src="script.js"></script>
   <script>
     async function load() {
-      const [cRes, aRes] = await Promise.all([fetch('/api/categories'), fetch('/api/authors')]);
+      const cRes = await fetch('/api/categories');
       const cats = await cRes.json();
-      const auths = await aRes.json();
       document.getElementById('category').innerHTML = '<option value="">Select Category</option>' + cats.map(c => `<option value="${c.category_id}">${c.category_name}</option>`).join('');
-      document.getElementById('authors').innerHTML = auths.map(a => `<option value="${a.author_id}">${a.name}</option>`).join('');
     }
     load();
 
     async function submitForm(e) {
       e.preventDefault();
-      const author_ids = Array.from(document.getElementById('authors').selectedOptions).map(opt => Number(opt.value));
       const payload = {
         title: document.getElementById('title').value,
         isbn: document.getElementById('isbn').value,
         publisher: document.getElementById('publisher').value,
         publication_year: document.getElementById('year').value ? Number(document.getElementById('year').value) : null,
         category_id: Number(document.getElementById('category').value),
-        author_ids,
+        author_names: document
+          .getElementById('author_names')
+          .value
+          .split(',')
+          .map(name => name.trim())
+          .filter(Boolean),
         number_of_copies: Number(document.getElementById('copies').value)
       };
 

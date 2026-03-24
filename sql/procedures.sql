@@ -11,7 +11,7 @@ CREATE OR REPLACE PROCEDURE calculate_fine (
   v_rate        NUMBER := 5; -- fine per day
 BEGIN
   SELECT due_date,
-         NVL(return_date, TRUNC(SYSDATE))
+         NVL(return_date, TRUNC(SYSDATE))  
   INTO   v_due_date,
          v_return_date
   FROM   Issue_Record

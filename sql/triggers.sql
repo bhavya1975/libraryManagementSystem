@@ -1,6 +1,6 @@
 -- Oracle triggers for status and fine handling
-
 -- After a book is issued, mark copy as 'issued'
+
 CREATE OR REPLACE TRIGGER trg_after_issue_insert
 AFTER INSERT ON Issue_Record
 FOR EACH ROW
