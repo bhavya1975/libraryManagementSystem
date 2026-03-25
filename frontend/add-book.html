@@ -37,9 +37,19 @@
           <datalist id="category-list"></datalist>
         </div>
         <div class="form-group">
+<<<<<<< HEAD
           <label>Author (Type or select)</label>
           <input type="text" id="author" list="author-list" required placeholder="Type author name" autocomplete="off">
           <datalist id="author-list"></datalist>
+=======
+          <label>Author Name(s)</label>
+          <input
+            type="text"
+            id="author_names"
+            required
+            placeholder="e.g. J. K. Rowling, George Orwell"
+          >
+>>>>>>> 8a2d5b820f05fb1d3f94d10ed00e81da70ec76df
         </div>
         <div class="form-group">
           <label>Number of Copies to Add</label>
@@ -58,6 +68,7 @@
     let selectedExistingBookId = null;
 
     async function load() {
+<<<<<<< HEAD
       const [bRes, cRes, aRes] = await Promise.all([
         fetch('/api/books'),
         fetch('/api/categories'),
@@ -70,6 +81,11 @@
       document.getElementById('book-list').innerHTML = allBooks.map(b => `<option value="${b.title.trim()}"></option>`).join('');
       document.getElementById('category-list').innerHTML = allCats.map(c => `<option value="${c.category_name.trim()}"></option>`).join('');
       document.getElementById('author-list').innerHTML = allAuths.map(a => `<option value="${a.name.trim()}"></option>`).join('');
+=======
+      const cRes = await fetch('/api/categories');
+      const cats = await cRes.json();
+      document.getElementById('category').innerHTML = '<option value="">Select Category</option>' + cats.map(c => `<option value="${c.category_id}">${c.category_name}</option>`).join('');
+>>>>>>> 8a2d5b820f05fb1d3f94d10ed00e81da70ec76df
     }
     load();
 
@@ -120,6 +136,7 @@
 
     async function submitForm(e) {
       e.preventDefault();
+<<<<<<< HEAD
       const copies = Number(document.getElementById('copies').value);
       
       // If book already exists, just add copies
@@ -176,14 +193,27 @@
         }
       }
       
+=======
+>>>>>>> 8a2d5b820f05fb1d3f94d10ed00e81da70ec76df
       const payload = {
         title: document.getElementById('title').value.trim(),
         isbn: document.getElementById('isbn').value.trim(),
         publisher: document.getElementById('publisher').value.trim(),
         publication_year: document.getElementById('year').value ? Number(document.getElementById('year').value) : null,
+<<<<<<< HEAD
         category_id: catId,
         author_ids: [authId],
         number_of_copies: copies
+=======
+        category_id: Number(document.getElementById('category').value),
+        author_names: document
+          .getElementById('author_names')
+          .value
+          .split(',')
+          .map(name => name.trim())
+          .filter(Boolean),
+        number_of_copies: Number(document.getElementById('copies').value)
+>>>>>>> 8a2d5b820f05fb1d3f94d10ed00e81da70ec76df
       };
 
       try {

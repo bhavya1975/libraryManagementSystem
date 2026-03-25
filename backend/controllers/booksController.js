@@ -56,14 +56,20 @@ exports.createBook = async (req, res) => {
     publisher,
     publication_year,
     category_id,
-    author_ids = [],
+    author_names = [],
     number_of_copies = 1
   } = req.body;
 
-  if (!title || !isbn || !category_id) {
+  const normalizedAuthorNames = [...new Set(
+    (Array.isArray(author_names) ? author_names : [])
+      .map((name) => (typeof name === 'string' ? name.trim() : ''))
+      .filter(Boolean)
+  )];
+
+  if (!title || !isbn || !category_id || normalizedAuthorNames.length === 0) {
     return res
       .status(400)
-      .json({ message: 'title, isbn and category_id are required' });
+      .json({ message: 'title, isbn, category_id and at least one author name are required' });
   }
 
   const conn = await db.getConnection();
@@ -91,16 +97,49 @@ exports.createBook = async (req, res) => {
 
     const bookId = result.outBinds.book_id[0];
 
-    if (author_ids.length > 0) {
-      const insertAuthorSql =
-        'INSERT INTO Book_Author (book_id, author_id) VALUES (:book_id, :author_id)';
-      for (const authorId of author_ids) {
-        await conn.execute(
+    const lookupAuthorSql = `
+      SELECT author_id
+      FROM Author
+      WHERE LOWER(name) = LOWER(:name)
+      FETCH FIRST 1 ROWS ONLY
+    `;
+
+    const insertAuthorSql = `
+      INSERT INTO Author (name, nationality)
+      VALUES (:name, NULL)
+      RETURNING author_id INTO :author_id
+    `;
+
+    const insertBookAuthorSql =
+      'INSERT INTO Book_Author (book_id, author_id) VALUES (:book_id, :author_id)';
+
+    for (const authorName of normalizedAuthorNames) {
+      const existingAuthor = await conn.execute(
+        lookupAuthorSql,
+        { name: authorName },
+        { autoCommit: false }
+      );
+
+      let authorId;
+      if (existingAuthor.rows.length > 0) {
+        authorId = existingAuthor.rows[0].AUTHOR_ID;
+      } else {
+        const createdAuthor = await conn.execute(
           insertAuthorSql,
-          { book_id: bookId, author_id: authorId },
+          {
+            name: authorName,
+            author_id: { dir: oracledb.BIND_OUT, type: oracledb.NUMBER }
+          },
           { autoCommit: false }
         );
+        authorId = createdAuthor.outBinds.author_id[0];
       }
+
+      await conn.execute(
+        insertBookAuthorSql,
+        { book_id: bookId, author_id: authorId },
+        { autoCommit: false }
+      );
     }
 
     if (number_of_copies > 0) {
