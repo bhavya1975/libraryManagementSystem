@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Login - Library System</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    .login-container { max-width: 400px; margin: 100px auto; background: var(--bg-card); padding: 30px; border-radius: 8px; }
+    .role-btn { display: block; width: 100%; margin-bottom: 15px; text-align: center; }
+  </style>
+</head>
+<body>
+  <div class="login-container">
+    <h2 class="header-title" style="margin-bottom: 20px; text-align: center;">Library Login</h2>
+    
+    <div id="role-selection">
+      <button class="btn role-btn" onclick="selectRole('admin')">Login as Admin (Librarian)</button>
+      <button class="btn role-btn" onclick="selectRole('user')">Login as User (Member)</button>
+    </div>
+
+    <div id="admin-login" style="display: none;">
+      <h3>Select Librarian</h3>
+      <select id="librarian-select" class="form-group" style="width: 100%; margin: 15px 0; padding: 10px;"></select>
+      <button class="btn role-btn" onclick="login('admin')">Access Dashboard</button>
+      <button class="btn role-btn" style="background: transparent; color: var(--text-muted);" onclick="goBack()">Back</button>
+    </div>
+
+    <div id="user-login" style="display: none;">
+      <h3>Select Member</h3>
+      <select id="member-select" class="form-group" style="width: 100%; margin: 15px 0; padding: 10px;"></select>
+      <button class="btn role-btn" onclick="login('user')">Access Dashboard</button>
+      <button class="btn role-btn" style="background: transparent; color: var(--text-muted);" onclick="goBack()">Back</button>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+  <script>
+    async function loadData() {
+      const [lRes, mRes] = await Promise.all([fetch('/api/librarians'), fetch('/api/members')]);
+      const libs = await lRes.json();
+      const mems = await mRes.json();
+      document.getElementById('librarian-select').innerHTML = libs.map(l => `<option value="${l.librarian_id}">${l.name}</option>`).join('');
+      document.getElementById('member-select').innerHTML = mems.map(m => `<option value="${m.member_id}">${m.name}</option>`).join('');
+    }
+    loadData();
+
+    function selectRole(role) {
+      document.getElementById('role-selection').style.display = 'none';
+      if (role === 'admin') document.getElementById('admin-login').style.display = 'block';
+      if (role === 'user') document.getElementById('user-login').style.display = 'block';
+    }
+
+    function goBack() {
+      document.getElementById('admin-login').style.display = 'none';
+      document.getElementById('user-login').style.display = 'none';
+      document.getElementById('role-selection').style.display = 'block';
+    }
+
+    function login(role) {
+      if (role === 'admin') {
+        const pass = prompt('Enter Admin Password (Hint: admin123):');
+        if (pass !== 'admin123') {
+          alert('Invalid password! Access denied.');
+          return;
+        }
+        localStorage.setItem('userId', document.getElementById('librarian-select').value);
+      } else {
+        localStorage.setItem('userId', document.getElementById('member-select').value);
+      }
+      localStorage.setItem('role', role);
+      window.location.href = 'index.html';
+    }
+  </script>
+</body>
+</html>
+

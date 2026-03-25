@@ -215,3 +215,79 @@ exports.createAuthor = async (req, res) => {
   }
 };
 
+// POST /api/books/:id/copies
+exports.addCopies = async (req, res) => {
+  const bookId = parseInt(req.params.id);
+  const { number_of_copies = 1 } = req.body;
+  if (!bookId || number_of_copies < 1) return res.status(400).json({ message: 'Invalid data' });
+  
+  try {
+    const conn = await db.getConnection();
+    try {
+      const insertCopySql = "INSERT INTO Book_Copy (book_id, status) VALUES (:book_id, 'available')";
+      for (let i = 0; i < number_of_copies; i++) {
+        await conn.execute(insertCopySql, { book_id: bookId }, { autoCommit: false });
+      }
+      await conn.commit();
+      res.status(201).json({ message: 'Copies added successfully' });
+    } catch (err) {
+      await conn.rollback();
+      console.error(err);
+      res.status(500).json({ message: 'Error adding copies' });
+    } finally {
+      await conn.close();
+    }
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Database error' });
+  }
+};
+
+// DELETE /api/books/:id
+exports.deleteBook = async (req, res) => {
+  const bookId = parseInt(req.params.id);
+  if (!bookId) return res.status(400).json({ message: 'book_id required' });
+  try {
+    const conn = await db.getConnection();
+    try {
+      await conn.execute('DELETE FROM Book_Copy WHERE book_id = :book_id', { book_id: bookId }, { autoCommit: false });
+      await conn.execute('DELETE FROM Book_Author WHERE book_id = :book_id', { book_id: bookId }, { autoCommit: false });
+      await conn.execute('DELETE FROM Book WHERE book_id = :book_id', { book_id: bookId }, { autoCommit: false });
+      await conn.commit();
+      res.json({ message: 'Book deleted successfully' });
+    } catch (err) {
+      await conn.rollback();
+      throw err;
+    } finally {
+      await conn.close();
+    }
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Error deleting book', error: err.message });
+  }
+};
+
+// PUT /api/books/:id
+exports.updateBook = async (req, res) => {
+  const bookId = parseInt(req.params.id);
+  const { title, isbn, publisher, publication_year } = req.body;
+  
+  if (!bookId || !title || !isbn) return res.status(400).json({ message: 'book_id, title, isbn required' });
+  
+  try {
+    const conn = await db.getConnection();
+    try {
+      await conn.execute(
+        `UPDATE Book SET title = :title, isbn = :isbn, publisher = :publisher, publication_year = :publication_year WHERE book_id = :book_id`,
+        { title, isbn, publisher, publication_year, book_id: bookId },
+        { autoCommit: true }
+      );
+      res.json({ message: 'Book updated successfully' });
+    } finally {
+      await conn.close();
+    }
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Error updating book', error: err.message });
+  }
+};

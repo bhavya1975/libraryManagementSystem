@@ -27,8 +27,8 @@ BEGIN
     WHERE copy_id = :NEW.copy_id;
 
     v_amount := CASE 
-      WHEN TRUNC(:NEW.return_date) > TRUNC(:NEW.due_date)
-      THEN (TRUNC(:NEW.return_date) - TRUNC(:NEW.due_date)) * 5
+      WHEN :NEW.return_date > :NEW.due_date
+      THEN ROUND((:NEW.return_date - :NEW.due_date) * 24 * 60) * 100
       ELSE 0
     END;
 

@@ -7,16 +7,7 @@
 </head>
 <body>
   
-<nav>
-  <h1>Library DBMS</h1>
-  <a href="index.html" class="">Dashboard</a>
-  <a href="add-book.html" class="">Add Book</a>
-  <a href="register-member.html" class="">Register Member</a>
-  <a href="issue-book.html" class="">Issue Book</a>
-  <a href="return-book.html" class="active">Return Book</a>
-  <a href="search-book.html" class="">Search Book</a>
-  <a href="overdue.html" class="">View Overdue</a>
-</nav>
+<nav id="sidebar"></nav>
 
   <main>
     <h2 class="header-title">Return Book</h2>
@@ -58,7 +49,12 @@
           method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload)
         });
         if (res.ok) {
-          showStatus('status', 'Book returned! Triggers computed fine/status.', true);
+          const data = await res.json();
+          let fineMsg = ' Returned on time, no fines!';
+          if (data.fine > 0) {
+            fineMsg = ` Book was late! Added a fine of ₹${data.fine}!`;
+          }
+          showStatus('status', 'Book returned!' + fineMsg, true);
           load(); // reload the list
         } else {
           showStatus('status', 'Error returning book', false);

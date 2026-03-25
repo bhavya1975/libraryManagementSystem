@@ -7,16 +7,7 @@
 </head>
 <body>
   
-<nav>
-  <h1>Library DBMS</h1>
-  <a href="index.html" class="">Dashboard</a>
-  <a href="add-book.html" class="">Add Book</a>
-  <a href="register-member.html" class="">Register Member</a>
-  <a href="issue-book.html" class="">Issue Book</a>
-  <a href="return-book.html" class="">Return Book</a>
-  <a href="search-book.html" class="active">Search Book</a>
-  <a href="overdue.html" class="">View Overdue</a>
-</nav>
+<nav id="sidebar"></nav>
 
   <main>
     <h2 class="header-title">Search Directory</h2>
@@ -50,6 +41,7 @@
             <th>Category</th>
             <th>Author(s)</th>
             <th>Year</th>
+            <th id="actions-head" style="display: none;">Admin Actions</th>
           </tr>
         </thead>
         <tbody id="tbody">
@@ -59,6 +51,9 @@
   </main>
   <script src="script.js"></script>
   <script>
+    const isAdmin = localStorage.getItem('role') === 'admin';
+    if (isAdmin) { document.getElementById('actions-head').style.display = 'table-cell'; }
+
     async function submitForm(e) {
       if(e) e.preventDefault();
       const t = document.getElementById('title').value;
@@ -73,17 +68,66 @@
       const res = await fetch(`/api/books?${params.toString()}`);
       const data = await res.json();
       
-      document.getElementById('tbody').innerHTML = data.map(b => `
-        <tr>
-          <td>${b.book_id}</td>
-          <td>${b.title}</td>
-          <td>${b.isbn}</td>
-          <td>${b.category_name || ''}</td>
-          <td>${b.authors || ''}</td>
-          <td>${b.publication_year || ''}</td>
-        </tr>
-      `).join('');
+      document.getElementById('tbody').innerHTML = data.map(b => {
+        let actionsHtml = '';
+        if (isAdmin) {
+          actionsHtml = `
+            <td>
+              <button onclick="editBook(${b.book_id}, '${b.title.replace(/'/g, "\\'")}', '${b.isbn}', '${b.publisher || ''}', '${b.publication_year || ''}')" style="background:#ff9800; color:white; border:none; padding:5px; border-radius:3px; cursor:pointer;">Edit</button>
+              <button onclick="deleteBook(${b.book_id})" style="background:#f44336; color:white; border:none; padding:5px; border-radius:3px; cursor:pointer;">Delete</button>
+            </td>
+          `;
+        }
+        return `
+          <tr>
+            <td>${b.book_id}</td>
+            <td>${b.title}</td>
+            <td>${b.isbn}</td>
+            <td>${b.category_name || ''}</td>
+            <td>${b.authors || ''}</td>
+            <td>${b.publication_year || ''}</td>
+            ${actionsHtml}
+          </tr>
+        `;
+      }).join('');
     }
+
+    async function editBook(id, t, i, p, y) {
+      const newTitle = prompt('Edit Title:', t);
+      if (newTitle === null) return;
+      const newIsbn = prompt('Edit ISBN:', i);
+      const newPub = prompt('Edit Publisher:', p);
+      const newYear = prompt('Edit Publication Year (optional):', y);
+
+      const payload = {
+        title: newTitle.trim() || t,
+        isbn: newIsbn.trim() || i,
+        publisher: newPub ? newPub.trim() : null,
+        publication_year: newYear ? Number(newYear) : null
+      };
+
+      try {
+        const res = await fetch(`/api/books/${id}`, {
+          method: 'PUT',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify(payload)
+        });
+        if (res.ok) alert('Book updated!');
+        else alert('Failed to update. Check logic or ISBN constraints.');
+        submitForm();
+      } catch (err) { alert('Network error'); }
+    }
+
+    async function deleteBook(id) {
+      if (!confirm('Are you absolutely sure? This will delete the book, authors link, and ALL physical copies!')) return;
+      try {
+        const res = await fetch(`/api/books/${id}`, { method: 'DELETE' });
+        if (res.ok) alert('Book and its copies permanently deleted.');
+        else alert('Failed to delete book.');
+        submitForm();
+      } catch(err) { alert('Network error'); }
+    }
+
     submitForm(); // initial load
   </script>
 </body>

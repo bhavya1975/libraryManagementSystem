@@ -7,11 +7,11 @@ CREATE OR REPLACE PROCEDURE calculate_fine (
 ) AS
   v_due_date    DATE;
   v_return_date DATE;
-  v_days_late   NUMBER;
-  v_rate        NUMBER := 5; -- fine per day
+  v_minutes_late NUMBER;
+  v_rate        NUMBER := 100; -- fine per minute late
 BEGIN
   SELECT due_date,
-         NVL(return_date, TRUNC(SYSDATE))
+         NVL(return_date, SYSDATE) -- don't TRUNC so we keep exact time!
   INTO   v_due_date,
          v_return_date
   FROM   Issue_Record
@@ -20,9 +20,10 @@ BEGIN
   IF v_due_date IS NULL THEN
     p_amount := 0;
   ELSE
-    v_days_late := TRUNC(v_return_date) - TRUNC(v_due_date);
-    IF v_days_late > 0 THEN
-      p_amount := v_days_late * v_rate;
+    -- date difference is in days. Multiply by 24 (hours) * 60 (minutes)
+    v_minutes_late := (v_return_date - v_due_date) * 24 * 60;
+    IF v_minutes_late > 0 THEN
+      p_amount := ROUND(v_minutes_late * v_rate);
     ELSE
       p_amount := 0;
     END IF;
@@ -66,8 +67,8 @@ BEGIN
   INSERT INTO Issue_Record (copy_id, member_id, issue_date, due_date, issued_by)
   VALUES (p_copy_id,
           p_member_id,
-          TRUNC(SYSDATE),
-          TRUNC(SYSDATE) + 14,
+          SYSDATE,
+          SYSDATE + (1 / 24 / 60), -- EXACTLY 1 MINUTE LOAN FOR TESTING
           p_librarian_id);
 
   -- status of Book_Copy will be set by trigger after insert on Issue_Record
@@ -92,7 +93,7 @@ BEGIN
   END IF;
 
   UPDATE Issue_Record
-  SET    return_date = TRUNC(SYSDATE)
+  SET    return_date = SYSDATE
   WHERE  issue_id = p_issue_id;
 
   -- trigger trg_after_issue_update will automatically update copy status 

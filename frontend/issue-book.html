@@ -7,28 +7,21 @@
 </head>
 <body>
   
-<nav>
-  <h1>Library DBMS</h1>
-  <a href="index.html" class="">Dashboard</a>
-  <a href="add-book.html" class="">Add Book</a>
-  <a href="register-member.html" class="">Register Member</a>
-  <a href="issue-book.html" class="active">Issue Book</a>
-  <a href="return-book.html" class="">Return Book</a>
-  <a href="search-book.html" class="">Search Book</a>
-  <a href="overdue.html" class="">View Overdue</a>
-</nav>
+<nav id="sidebar"></nav>
 
   <main>
     <h2 class="header-title">Issue Book Checkout</h2>
     <div class="card">
       <form id="form" onsubmit="submitForm(event)">
         <div class="form-group">
-          <label>Member</label>
-          <select id="member" required><option value="">Loading members...</option></select>
+          <label>Member (Type to search)</label>
+          <input type="text" id="member" list="member-list" required placeholder="Type member name" autocomplete="off">
+          <datalist id="member-list"></datalist>
         </div>
         <div class="form-group">
-          <label>Book Title</label>
-          <select id="book" required onchange="loadCopies()"><option value="">Loading books...</option></select>
+          <label>Book Title (Type to search)</label>
+          <input type="text" id="book" list="book-list" required placeholder="Type book title" autocomplete="off" oninput="handleBookSelect()">
+          <datalist id="book-list"></datalist>
         </div>
         <div class="form-group">
           <label>Available Physical Copy</label>
@@ -45,44 +38,64 @@
   </main>
   <script src="script.js"></script>
   <script>
+    let allMembers = [];
+    let allBooks = [];
+
     async function load() {
       const [mRes, bRes, lRes] = await Promise.all([
         fetch('/api/members'), fetch('/api/books'), fetch('/api/librarians')
       ]);
       const [mem, bks, lib] = await Promise.all([mRes.json(), bRes.json(), lRes.json()]);
       
-      document.getElementById('member').innerHTML = '<option value="">Select Member</option>' + mem.map(m => `<option value="${m.member_id}">${m.name}</option>`).join('');
-      document.getElementById('book').innerHTML = '<option value="">Select Book</option>' + bks.map(b => `<option value="${b.book_id}">${b.title} (${b.isbn})</option>`).join('');
-      document.getElementById('librarian').innerHTML = '<option value="">Select Librarian</option>' + lib.map(l => `<option value="${l.librarian_id}">${l.name}</option>`).join('');
+      allMembers = mem;
+      allBooks = bks;
+
+      document.getElementById('member-list').innerHTML = allMembers.map(m => `<option value="${m.name.trim()}"></option>`).join('');
+      document.getElementById('book-list').innerHTML = allBooks.map(b => `<option value="${b.title.trim()}"></option>`).join('');
+      document.getElementById('librarian').innerHTML = '<option value="">Select Librarian</option>' + lib.map(l => `<option value="${l.librarian_id}">${l.name.trim()}</option>`).join('');
     }
     load();
 
-    async function loadCopies() {
-      const book_id = document.getElementById('book').value;
+    async function handleBookSelect() {
+      const titleStr = document.getElementById('book').value.trim();
+      const bookObj = allBooks.find(b => b.title.trim().toLowerCase() === titleStr.toLowerCase());
+      
       const copyEl = document.getElementById('copy');
-      if (!book_id) {
-        copyEl.innerHTML = '<option value="">Select a book first...</option>';
+      if (!bookObj) {
+        copyEl.innerHTML = '<option value="">Select a valid book first...</option>';
         copyEl.disabled = true;
         return;
       }
-      const res = await fetch(`/api/books/available?book_id=${book_id}`);
+      
+      copyEl.innerHTML = '<option value="">Loading copies...</option>';
+      const res = await fetch(`/api/books/available?book_id=${bookObj.book_id}`);
       const copies = await res.json();
       if (copies.length === 0) {
         copyEl.innerHTML = '<option value="">No copies available right now.</option>';
         copyEl.disabled = true;
       } else {
-        copyEl.innerHTML = copies.map(c => `<option value="${c.copy_id}">Copy #${c.copy_id}</option>`).join('');
+        copyEl.innerHTML = copies.map((c, index) => `<option value="${c.copy_id}">Copy #${index + 1}</option>`).join('');
         copyEl.disabled = false;
       }
     }
 
     async function submitForm(e) {
       e.preventDefault();
+      
+      const memberName = document.getElementById('member').value.trim();
+      const memberObj = allMembers.find(m => m.name.trim().toLowerCase() === memberName.toLowerCase());
+      
+      if (!memberObj) {
+        showStatus('status', 'Invalid member. Please select from the suggestions.', false);
+        return;
+      }
+
       const payload = {
-        member_id: Number(document.getElementById('member').value),
+        member_id: memberObj.member_id,
         copy_id: Number(document.getElementById('copy').value),
         librarian_id: Number(document.getElementById('librarian').value)
       };
+
       try {
         const res = await fetch('/api/issue', {
           method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload)
@@ -90,7 +103,7 @@
         if (res.ok) {
           showStatus('status', 'Book successfully issued!', true);
           document.getElementById('form').reset();
-          loadCopies(); // reset copies
+          handleBookSelect(); // reset copy dropdown safely
         } else {
           showStatus('status', 'Error issuing book', false);
         }

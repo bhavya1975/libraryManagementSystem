@@ -7,24 +7,17 @@
 </head>
 <body>
   
-<nav>
-  <h1>Library DBMS</h1>
-  <a href="index.html" class="">Dashboard</a>
-  <a href="add-book.html" class="active">Add Book</a>
-  <a href="register-member.html" class="">Register Member</a>
-  <a href="issue-book.html" class="">Issue Book</a>
-  <a href="return-book.html" class="">Return Book</a>
-  <a href="search-book.html" class="">Search Book</a>
-  <a href="overdue.html" class="">View Overdue</a>
-</nav>
+<nav id="sidebar"></nav>
 
   <main>
     <h2 class="header-title">Add New Book</h2>
     <div class="card">
       <form id="form" onsubmit="submitForm(event)">
         <div class="form-group">
-          <label>Book Title</label>
-          <input type="text" id="title" required placeholder="The Great Gatsby">
+          <label>Book Title (Type to search existing books)</label>
+          <input type="text" id="title" list="book-list" required placeholder="The Great Gatsby" autocomplete="off" oninput="handleBookSelect()">
+          <datalist id="book-list"></datalist>
+          <small id="book-hint" style="color: #4CAF50; display: none; margin-top: 5px;">Existing book selected. Submitting will add new copies.</small>
         </div>
         <div class="form-group">
           <label>ISBN</label>
@@ -39,44 +32,158 @@
           <input type="number" id="year" placeholder="1925">
         </div>
         <div class="form-group">
-          <label>Category</label>
-          <select id="category" required><option value="">Loading categories...</option></select>
+          <label>Category (Type or select)</label>
+          <input type="text" id="category" list="category-list" required placeholder="Type category name" autocomplete="off">
+          <datalist id="category-list"></datalist>
         </div>
         <div class="form-group">
-          <label>Authors (Hold Ctrl/Cmd to select multiple)</label>
-          <select id="authors" multiple required style="height: 100px;"></select>
+          <label>Author (Type or select)</label>
+          <input type="text" id="author" list="author-list" required placeholder="Type author name" autocomplete="off">
+          <datalist id="author-list"></datalist>
         </div>
         <div class="form-group">
-          <label>Number of Initial Copies</label>
+          <label>Number of Copies to Add</label>
           <input type="number" id="copies" value="1" min="1" required>
         </div>
-        <button type="submit" class="btn">Save Book & Copies to Oracle</button>
+        <button type="submit" class="btn" id="submit-btn">Save Book & Copies</button>
       </form>
       <div id="status" class="status"></div>
     </div>
   </main>
   <script src="script.js"></script>
   <script>
+    let allBooks = [];
+    let allCats = [];
+    let allAuths = [];
+    let selectedExistingBookId = null;
+
     async function load() {
-      const [cRes, aRes] = await Promise.all([fetch('/api/categories'), fetch('/api/authors')]);
-      const cats = await cRes.json();
-      const auths = await aRes.json();
-      document.getElementById('category').innerHTML = '<option value="">Select Category</option>' + cats.map(c => `<option value="${c.category_id}">${c.category_name}</option>`).join('');
-      document.getElementById('authors').innerHTML = auths.map(a => `<option value="${a.author_id}">${a.name}</option>`).join('');
+      const [bRes, cRes, aRes] = await Promise.all([
+        fetch('/api/books'),
+        fetch('/api/categories'),
+        fetch('/api/authors')
+      ]);
+      allBooks = await bRes.json();
+      allCats = await cRes.json();
+      allAuths = await aRes.json();
+
+      document.getElementById('book-list').innerHTML = allBooks.map(b => `<option value="${b.title.trim()}"></option>`).join('');
+      document.getElementById('category-list').innerHTML = allCats.map(c => `<option value="${c.category_name.trim()}"></option>`).join('');
+      document.getElementById('author-list').innerHTML = allAuths.map(a => `<option value="${a.name.trim()}"></option>`).join('');
     }
     load();
 
+    function handleBookSelect() {
+      const titleStr = document.getElementById('title').value.trim();
+      const book = allBooks.find(b => b.title.trim().toLowerCase() === titleStr.toLowerCase());
+      
+      const isbnEl = document.getElementById('isbn');
+      const pubEl = document.getElementById('publisher');
+      const yearEl = document.getElementById('year');
+      const catEl = document.getElementById('category');
+      const authEl = document.getElementById('author');
+      const hintEl = document.getElementById('book-hint');
+      const btnEl = document.getElementById('submit-btn');
+
+      if (book) {
+        selectedExistingBookId = book.book_id;
+        isbnEl.value = book.isbn;
+        isbnEl.readOnly = true;
+        pubEl.value = book.publisher || '';
+        pubEl.readOnly = true;
+        yearEl.value = book.publication_year || '';
+        yearEl.readOnly = true;
+        catEl.value = book.category_name ? book.category_name.trim() : '';
+        catEl.readOnly = true;
+        authEl.value = book.authors ? book.authors.trim() : '';
+        authEl.readOnly = true;
+        hintEl.style.display = 'block';
+        btnEl.innerText = 'Add Copies to Existing Book';
+      } else {
+        selectedExistingBookId = null;
+        if (isbnEl.readOnly) {
+          isbnEl.value = '';
+          pubEl.value = '';
+          yearEl.value = '';
+          catEl.value = '';
+          authEl.value = '';
+        }
+        isbnEl.readOnly = false;
+        pubEl.readOnly = false;
+        yearEl.readOnly = false;
+        catEl.readOnly = false;
+        authEl.readOnly = false;
+        hintEl.style.display = 'none';
+        btnEl.innerText = 'Save Book & Copies';
+      }
+    }
+
     async function submitForm(e) {
       e.preventDefault();
-      const author_ids = Array.from(document.getElementById('authors').selectedOptions).map(opt => Number(opt.value));
+      const copies = Number(document.getElementById('copies').value);
+      
+      // If book already exists, just add copies
+      if (selectedExistingBookId) {
+        try {
+          const res = await fetch(`/api/books/${selectedExistingBookId}/copies`, {
+            method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ number_of_copies: copies })
+          });
+          if (res.ok) {
+            showStatus('status', 'Additional copies added to existing book!', true);
+            document.getElementById('form').reset();
+            handleBookSelect();
+            load();
+          } else {
+            showStatus('status', 'Error adding copies.', false);
+          }
+        } catch(err) { showStatus('status', 'Network Error', false); }
+        return;
+      }
+      
+      // Creating a completely new book
+      let catName = document.getElementById('category').value.trim();
+      let authName = document.getElementById('author').value.trim();
+      
+      // Find or create category
+      let catId = null;
+      let existingCat = allCats.find(c => c.category_name.trim().toLowerCase() === catName.toLowerCase());
+      if (existingCat) { catId = existingCat.category_id; }
+      else {
+        try {
+          const r = await fetch('/api/categories', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({category_name: catName})});
+          if (!r.ok) throw new Error();
+          const d = await r.json();
+          catId = d.category_id;
+        } catch(e) {
+          showStatus('status', 'Failed to create new category.', false);
+          return;
+        }
+      }
+      
+      // Find or create author
+      let authId = null;
+      let existingAuth = allAuths.find(a => a.name.trim().toLowerCase() === authName.toLowerCase());
+      if (existingAuth) { authId = existingAuth.author_id; }
+      else {
+        try {
+          const r = await fetch('/api/authors', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({name: authName, nationality: 'Unknown'})});
+          if (!r.ok) throw new Error();
+          const d = await r.json();
+          authId = d.author_id;
+        } catch(e) {
+          showStatus('status', 'Failed to create new author.', false);
+          return;
+        }
+      }
+      
       const payload = {
-        title: document.getElementById('title').value,
-        isbn: document.getElementById('isbn').value,
-        publisher: document.getElementById('publisher').value,
+        title: document.getElementById('title').value.trim(),
+        isbn: document.getElementById('isbn').value.trim(),
+        publisher: document.getElementById('publisher').value.trim(),
         publication_year: document.getElementById('year').value ? Number(document.getElementById('year').value) : null,
-        category_id: Number(document.getElementById('category').value),
-        author_ids,
-        number_of_copies: Number(document.getElementById('copies').value)
+        category_id: catId,
+        author_ids: [authId],
+        number_of_copies: copies
       };
 
       try {
@@ -84,8 +191,10 @@
           method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload)
         });
         if (res.ok) {
-          showStatus('status', 'Book and Copies securely saved!', true);
+          showStatus('status', 'New Book and Copies securely saved!', true);
           document.getElementById('form').reset();
+          handleBookSelect();
+          load();
         } else {
           showStatus('status', 'Error saving book. Is ISBN unique?', false);
         }

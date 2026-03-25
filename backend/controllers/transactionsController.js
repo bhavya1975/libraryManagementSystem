@@ -46,7 +46,20 @@ exports.returnBook = async (req, res) => {
         { issue_id },
         { autoCommit: true }
       );
-      res.json({ message: 'Book returned' });
+      
+      // Fetch the generated fine if there was one
+      const fineResult = await conn.execute(
+        'SELECT amount FROM Fine WHERE issue_id = :issue_id',
+        { issue_id }
+      );
+      
+      let fineAmount = 0;
+      if (fineResult.rows.length > 0) {
+        // Handle potential exact uppercase depending on connection setup if lowerCaseKeys hasn't kicked in
+        fineAmount = fineResult.rows[0].AMOUNT !== undefined ? fineResult.rows[0].AMOUNT : fineResult.rows[0].amount;
+      }
+
+      res.json({ message: 'Book returned', fine: fineAmount });
     } finally {
       await conn.close();
     }
@@ -71,13 +84,13 @@ exports.getOverdueBooks = async (_req, res) => {
                bc.copy_id,
                ir.issue_date,
                ir.due_date,
-               TRUNC(SYSDATE - ir.due_date) AS days_overdue
+               ROUND((SYSDATE - ir.due_date) * 24 * 60) AS minutes_overdue
         FROM Issue_Record ir
         JOIN Member m     ON ir.member_id = m.member_id
         JOIN Book_Copy bc ON ir.copy_id = bc.copy_id
         JOIN Book b       ON bc.book_id = b.book_id
         WHERE ir.return_date IS NULL
-          AND ir.due_date < TRUNC(SYSDATE)
+          AND ir.due_date < SYSDATE
       `;
       const result = await conn.execute(sql);
       res.json(result.rows);

@@ -7,16 +7,7 @@
 </head>
 <body>
   
-<nav>
-  <h1>Library DBMS</h1>
-  <a href="index.html" class="">Dashboard</a>
-  <a href="add-book.html" class="">Add Book</a>
-  <a href="register-member.html" class="">Register Member</a>
-  <a href="issue-book.html" class="">Issue Book</a>
-  <a href="return-book.html" class="">Return Book</a>
-  <a href="search-book.html" class="">Search Book</a>
-  <a href="overdue.html" class="active">View Overdue</a>
-</nav>
+<nav id="sidebar"></nav>
 
   <main>
     <h2 class="header-title">Overdue Logs</h2>
@@ -30,7 +21,7 @@
             <th>Copy ID</th>
             <th>Issue Date</th>
             <th>Due Date</th>
-            <th>Days Overdue</th>
+            <th>Minutes Overdue</th>
           </tr>
         </thead>
         <tbody id="tbody">
@@ -58,7 +49,7 @@
             <td>${r.copy_id}</td>
             <td>${r.issue_date ? r.issue_date.substring(0, 10) : ''}</td>
             <td>${r.due_date ? r.due_date.substring(0, 10) : ''}</td>
-            <td style="color: var(--danger); font-weight: bold;">${r.days_overdue} days</td>
+            <td style="color: var(--danger); font-weight: bold;">${r.minutes_overdue} min</td>
           </tr>
         `).join('');
       } catch (e) {
