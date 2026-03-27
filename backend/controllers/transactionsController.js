@@ -209,8 +209,13 @@ exports.getCurrentIssues = async (_req, res) => {
     const conn = await db.getConnection();
     try {
       const sql = `
+        WITH CopySeq AS (
+          SELECT copy_id, book_id, ROW_NUMBER() OVER (PARTITION BY book_id ORDER BY copy_id) AS copy_number
+          FROM Book_Copy
+        )
         SELECT ir.issue_id,
                ir.copy_id,
+               cs.copy_number,
                ir.member_id,
                m.name AS member_name,
                b.title,
@@ -218,8 +223,8 @@ exports.getCurrentIssues = async (_req, res) => {
                ir.due_date
         FROM Issue_Record ir
         JOIN Member m     ON ir.member_id = m.member_id
-        JOIN Book_Copy bc ON ir.copy_id = bc.copy_id
-        JOIN Book b       ON bc.book_id = b.book_id
+        JOIN CopySeq cs   ON ir.copy_id = cs.copy_id
+        JOIN Book b       ON cs.book_id = b.book_id
         WHERE ir.return_date IS NULL
       `;
       const result = await conn.execute(sql);

@@ -34,7 +34,7 @@
           issueEl.disabled = true;
         } else {
           issueEl.innerHTML = '<option value="">Select the book to return...</option>' + 
-            issues.map(i => `<option value="${i.issue_id}">${i.title} (Copy #${i.copy_id}) - Issued to ${i.member_name}</option>`).join('');
+            issues.map(i => `<option value="${i.issue_id}">${i.title} (Copy #${i.copy_number || i.copy_id}) - Issued to ${i.member_name}</option>`).join('');
           issueEl.disabled = false;
         }
       } catch (e) { }

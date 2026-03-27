@@ -11,11 +11,7 @@ CREATE OR REPLACE PROCEDURE calculate_fine (
   v_rate        NUMBER := 100; -- fine per minute late
 BEGIN
   SELECT due_date,
-<<<<<<< HEAD
          NVL(return_date, SYSDATE) -- don't TRUNC so we keep exact time!
-=======
-         NVL(return_date, TRUNC(SYSDATE))  
->>>>>>> 8a2d5b820f05fb1d3f94d10ed00e81da70ec76df
   INTO   v_due_date,
          v_return_date
   FROM   Issue_Record
