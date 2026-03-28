@@ -15,5 +15,8 @@ router.post('/fines/:fine_id/pay', transactionController.markFinePaid);
 router.get('/issues/current', transactionController.getCurrentIssues);
 router.get('/issues/history', transactionController.getIssueHistory);
 
+// Stats summary dashboard
+router.get('/stats', transactionController.getDashboardStats);
+
 module.exports = router;
 

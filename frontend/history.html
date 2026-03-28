@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Global History - Library System</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <nav id="sidebar"></nav>
+  <main>
+    <h2 class="header-title">All Issued Books History</h2>
+    <div class="card table-container">
+      <table>
+        <thead>
+          <tr>
+            <th>Issue ID</th>
+            <th>Member</th>
+            <th>Book Title</th>
+            <th>Copy ID</th>
+            <th>Issue Date</th>
+            <th>Due Date</th>
+            <th>Return Date</th>
+          </tr>
+        </thead>
+        <tbody id="tbody">
+          <tr><td colspan="7">Loading...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </main>
+  <script src="script.js"></script>
+  <script>
+    async function load() {
+      try {
+        const res = await fetch('/api/issues/history');
+        const data = await res.json();
+        const tbody = document.getElementById('tbody');
+        if (data.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="7">No issue history found.</td></tr>';
+          return;
+        }
+        tbody.innerHTML = data.map(r => `
+          <tr>
+            <td>${r.issue_id}</td>
+            <td>${r.member_name} (#${r.member_id})</td>
+            <td>${r.title}</td>
+            <td>${r.copy_id}</td>
+            <td>${new Date(r.issue_date).toLocaleDateString()}</td>
+            <td>${new Date(r.due_date).toLocaleDateString()}</td>
+            <td>${r.return_date ? new Date(r.return_date).toLocaleDateString() : '<span style="color:var(--danger)">Not Returned</span>'}</td>
+          </tr>
+        `).join('');
+      } catch (e) {
+        document.getElementById('tbody').innerHTML = '<tr><td colspan="7">Error loading history</td></tr>';
+      }
+    }
+    load();
+  </script>
+</body>
+</html>

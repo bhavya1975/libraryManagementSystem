@@ -44,12 +44,12 @@
       }
 
       tbody.innerHTML = overdueBooks.map(b => {
-        let fineMsg = `$${b.fine_amount.toFixed(2)}`;
+        let fineMsg = `₹${b.fine_amount.toFixed(2)}`;
         if (b.fine_amount === 0) { fineMsg = 'Calculate at desk'; }
 
         return `
           <tr>
-            <td>${b.title} (Copy #${b.copy_id})</td>
+            <td>${b.title} (Copy #${b.copy_number})</td>
             <td>${new Date(b.issue_date).toLocaleDateString()}</td>
             <td><strong style="color: red">${new Date(b.due_date).toLocaleDateString()}</strong></td>
             <td>${fineMsg} (${b.paid_status || 'N/A'})</td>

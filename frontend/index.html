@@ -10,32 +10,228 @@
 <nav id="sidebar"></nav>
 
   <main>
-    <h2 class="header-title">Welcome to the Library</h2>
-    <div class="dashboard-grid">
-      <div class="stat-card">
-        <h3>Manage Books</h3>
-        <p class="stat-value">📚</p>
-        <p>Add and track inventory</p>
-      </div>
-      <div class="stat-card">
-        <h3>Members</h3>
-        <p class="stat-value">👥</p>
-        <p>Register new readers</p>
-      </div>
-      <div class="stat-card">
-        <h3>Transactions</h3>
-        <p class="stat-value">🔄</p>
-        <p>Issue and return copies</p>
-      </div>
+    <div class="dashboard-header">
+        <h2 class="header-title" style="margin-bottom: 0;">Library Overview</h2>
+        <div class="dashboard-date" id="current-date"></div>
     </div>
-    <div class="card">
-      <h2>Getting Started</h2>
-      <p style="color: var(--text-muted); margin-top: 1rem; line-height: 1.6;">
-        Welcome to the customized Oracle DBMS Library Management System. 
-        Use the sleek sidebar navigation to interact with the database. Real-time REST APIs are powering all dropdowns and tables to keep your data perfectly normalized.
-      </p>
+
+    <!-- Summary Stats -->
+    <div class="stat-group">
+        <div class="summary-card">
+            <div class="summary-icon">👥</div>
+            <div class="summary-content">
+                <h4>Current Users</h4>
+                <div class="value" id="stat-users">0</div>
+                <div class="label" style="color: var(--success);">Active members</div>
+            </div>
+        </div>
+        <div class="summary-card">
+            <div class="summary-icon">📚</div>
+            <div class="summary-content">
+                <h4>Total Books</h4>
+                <div class="value" id="stat-books">0</div>
+                <div class="label">Total copies available</div>
+            </div>
+        </div>
+        <div class="summary-card">
+            <div class="summary-icon">📑</div>
+            <div class="summary-content">
+                <h4>Borrowed Books</h4>
+                <div class="value" id="stat-borrowed">0</div>
+                <div class="label" style="color: var(--primary);">Currently checked out</div>
+            </div>
+        </div>
     </div>
+
+    <div class="main-stats-grid">
+        <!-- Chart Card -->
+        <div class="card chart-card">
+            <div class="chart-header">
+                <h3>Most Borrowed Categories</h3>
+                <select class="chart-dropdown">
+                    <option>This month</option>
+                    <option>This year</option>
+                </select>
+            </div>
+            <div class="chart-container-wrapper">
+                <div class="chart-container">
+                    <canvas id="categoryChart"></canvas>
+                </div>
+                <div class="chart-legend" id="category-legend">
+                    <!-- Legend items will be injected here -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Operations -->
+        <div class="card" id="quick-ops-card">
+            <h3 id="ops-title">Quick Operations</h3>
+            <div class="quick-actions-grid" id="quick-actions">
+                <!-- Links will be injected based on role -->
+            </div>
+        </div>
+
+        <!-- Recent Transactions -->
+        <div class="card" style="grid-column: 1 / -1;">
+            <h3>Recent Transactions</h3>
+            <div class="activity-list" id="activity-list">
+                <!-- Activity items will be injected here -->
+            </div>
+        </div>
+    </div>
+
   </main>
+  <style>
+    /* Recent Activity List */
+    .activity-list { margin-top: 1rem; }
+    .activity-item { display: flex; align-items: center; padding: 1rem 0; border-bottom: 1px solid var(--border-color); gap: 1.5rem; }
+    .activity-item:last-child { border-bottom: none; }
+    .activity-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--primary); box-shadow: 0 0 10px var(--primary); }
+    .activity-details { flex: 1; }
+    .activity-details p { font-size: 0.95rem; color: var(--text-main); margin-bottom: 0.3rem; }
+    .activity-details span { font-size: 0.8rem; color: var(--text-muted); }
+    .activity-time { font-size: 0.9rem; color: var(--text-muted); font-weight: 500; }
+  </style>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="script.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', async () => {
+      const role = localStorage.getItem('role') || 'user';
+      const userId = localStorage.getItem('userId');
+      
+      // Update UI title and Header
+      const opsTitle = document.getElementById('ops-title');
+      const opsCard = document.getElementById('quick-ops-card');
+      const actionsGrid = document.getElementById('quick-actions');
+      
+      // Set current date
+      const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+      document.getElementById('current-date').innerText = new Date().toLocaleDateString('en-US', options);
+
+      // Define role-based quick actions
+      const adminActions = [
+        { label: 'Issue Copy', desc: 'New issue transaction', href: 'issue-book.html', icon: '📤' },
+        { label: 'Return Copy', desc: 'Check in items', href: 'return-book.html', icon: '📥' },
+        { label: 'Add Book', desc: 'Update inventory', href: 'add-book.html', icon: '➕' },
+        { label: 'Global History', desc: 'View all transactions', href: 'history.html', icon: '📜' }
+      ];
+
+      const userActions = [
+        { label: 'Search Book', desc: 'Find your next read', href: 'search-book.html', icon: '🔍' },
+        { label: 'My Issued Book', desc: 'View your active loans', href: 'my-books.html', icon: '📖' },
+        { label: 'My Overdue', desc: 'Check pending returns', href: 'my-overdue.html', icon: '⚠️' }
+      ];
+
+      const actions = role === 'admin' ? adminActions : userActions;
+      opsTitle.innerText = role === 'admin' ? 'Quick Operations' : 'My Quick Links';
+
+      actionsGrid.innerHTML = actions.map(act => `
+        <button class="action-btn" onclick="window.location.href='${act.href}'">
+            <h5>${act.label}</h5>
+            <p>${act.desc}</p>
+        </button>
+      `).join('');
+
+      // Fetch Stats
+      try {
+          const response = await fetch(`/api/stats?role=${role}&member_id=${userId}&t=${new Date().getTime()}`);
+          const data = await response.json();
+
+          // Update Summary Cards
+          if (role === 'admin') {
+              document.getElementById('stat-users').innerText = data.users ?? 0;
+              document.getElementById('stat-books').innerText = data.totalBooks ?? 0;
+              document.getElementById('stat-borrowed').innerText = data.borrowed ?? 0;
+          } else {
+              // For user, show personal stats
+              document.querySelector('.summary-card:nth-child(1) h4').innerText = 'My Active Books';
+              document.querySelector('.summary-card:nth-child(1) .label').innerText = 'Currently reading';
+              document.getElementById('stat-users').innerText = data.user_borrowed ?? 0;
+
+              document.querySelector('.summary-card:nth-child(2) h4').innerText = 'My Overdue';
+              document.querySelector('.summary-card:nth-child(2) .label').innerText = 'Pending returns';
+              document.getElementById('stat-books').innerText = data.user_overdue ?? 0;
+
+              document.querySelector('.summary-card:nth-child(3) h4').innerText = 'Library Size';
+              document.querySelector('.summary-card:nth-child(3) .label').innerText = 'Total collections';
+              document.getElementById('stat-borrowed').innerText = data.totalBooks ?? 0;
+          }
+          
+          console.log("Dashboard Stats Received:", data);
+
+          // Render Chart
+          const ctx = document.getElementById('categoryChart').getContext('2d');
+          const labels = data.categories.map(c => c.CATEGORY_NAME || c.category_name);
+          const counts = data.categories.map(c => c.BORROW_COUNT || c.borrow_count);
+          const totalBorrowCount = counts.reduce((a, b) => a + b, 0);
+
+          const colors = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'];
+
+          new Chart(ctx, {
+              type: 'doughnut',
+              data: {
+                  labels: labels,
+                  datasets: [{
+                      data: counts,
+                      backgroundColor: colors,
+                      borderWidth: 0,
+                      hoverOffset: 15
+                  }]
+              },
+              options: {
+                  cutout: '75%',
+                  plugins: {
+                      legend: { display: false }
+                  },
+                  responsive: true,
+                  maintainAspectRatio: false
+              }
+          });
+
+          // Inject Legend
+          const legendEl = document.getElementById('category-legend');
+          labels.forEach((label, i) => {
+              const percent = totalBorrowCount > 0 ? Math.round((counts[i] / totalBorrowCount) * 100) : 0;
+              const item = document.createElement('div');
+              item.className = 'legend-item';
+              item.innerHTML = `
+                  <div class="legend-color" style="background: ${colors[i]}"></div>
+                  <div class="legend-name">${label}</div>
+                  <div class="legend-value">${counts[i]} Books ${role === 'user' ? '(Library)' : ''}</div>
+                  <div class="legend-percent">${percent}%</div>
+              `;
+              legendEl.appendChild(item);
+          });
+
+          // Inject Activity
+          const activityEl = document.getElementById('activity-list');
+          const activityHeader = document.querySelector('.card:nth-child(3) h3'); // Title for activities
+          if (role === 'user') {
+              activityHeader.innerText = 'My Recent Activity';
+          }
+
+          if (data.activities && data.activities.length > 0) {
+              data.activities.forEach(act => {
+                  const item = document.createElement('div');
+                  item.className = 'activity-item';
+                  item.innerHTML = `
+                      <div class="activity-dot"></div>
+                      <div class="activity-details">
+                          <p><strong>${role === 'admin' ? (act.MEMBER_NAME || act.member_name) : 'You'}</strong> issued <strong>"${act.BOOK_TITLE || act.book_title}"</strong></p>
+                          <span>New book issue recorded</span>
+                      </div>
+                      <div class="activity-time">${act.ACTIVITY_TIME || act.activity_time}</div>
+                  `;
+                  activityEl.appendChild(item);
+              });
+          } else {
+              activityEl.innerHTML = '<p style="color: var(--text-muted); text-align: center; padding: 20px;">No recent activity</p>';
+          }
+
+      } catch (err) {
+          console.error("Failed to fetch dashboard stats:", err);
+      }
+    });
+  </script>
 </body>
 </html>

@@ -119,11 +119,15 @@
     }
 
     async function deleteBook(id) {
-      if (!confirm('Are you absolutely sure? This will delete the book, authors link, and ALL physical copies!')) return;
+      if (!confirm('Are you absolutely sure? This will delete the book, author links, and all copies?')) return;
       try {
         const res = await fetch(`/api/books/${id}`, { method: 'DELETE' });
-        if (res.ok) alert('Book and its copies permanently deleted.');
-        else alert('Failed to delete book.');
+        const result = await res.json();
+        if (res.ok) {
+          alert('Book and its metadata permanently deleted.');
+        } else {
+          alert('Action Blocked: ' + (result.error || result.message));
+        }
         submitForm();
       } catch(err) { alert('Network error'); }
     }

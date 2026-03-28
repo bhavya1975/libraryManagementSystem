@@ -51,8 +51,13 @@
         if (res.ok) {
           const data = await res.json();
           let fineMsg = ' Returned on time, no fines!';
-          if (data.fine > 0) {
-            fineMsg = ` Book was late! Added a fine of ₹${data.fine}!`;
+          if (data.fine > 0 && data.fine_id) {
+            if (confirm(`Book was late! Created a fine of ₹${data.fine}.\nDid the member pay this fine right now to clear their account?`)) {
+              await fetch(`/api/fines/${data.fine_id}/pay`, { method: 'POST' });
+              fineMsg = ` Book was late! Fine of ₹${data.fine} was paid immediately at the desk.`;
+            } else {
+              fineMsg = ` Book was late! Fine of ₹${data.fine} added to their account as unpaid.`;
+            }
           }
           showStatus('status', 'Book returned!' + fineMsg, true);
           load(); // reload the list

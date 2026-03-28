@@ -1,3 +1,4 @@
+require('dotenv').config();
 // Thin wrapper that starts the unified backend app from ../backend.
 const app = require('../backend/server');
 

@@ -59,6 +59,7 @@ app.use(express.static(path.join(__dirname, '..', 'frontend')));
 // Oracle returns column names in UPPERCASE, which breaks frontend JS expecting lowercase.
 // Here we add a middleware to recursively lowercase keys before sending JSON.
 function lowerCaseKeys(obj) {
+  if (obj instanceof Date) return obj;
   if (Array.isArray(obj)) return obj.map(lowerCaseKeys);
   if (obj !== null && typeof obj === 'object') {
     return Object.fromEntries(
@@ -80,6 +81,10 @@ app.use('/api', (req, res, next) => {
 app.use('/api', bookRoutes);
 app.use('/api', memberRoutes);
 app.use('/api', transactionRoutes);
+
+// Start Automated Overdue Email Monitoring (every 30 seconds)
+const { startOverdueMonitor } = require('./services/overdueChecker');
+startOverdueMonitor(30000);
 
 // Fallback to index.html for root
 app.get('/', (_req, res) => {

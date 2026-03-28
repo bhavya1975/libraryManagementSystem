@@ -140,6 +140,9 @@ CREATE TABLE Issue_Record (
   due_date    DATE NOT NULL,
   return_date DATE,
   issued_by   NUMBER NOT NULL,
+  issue_notified   NUMBER(1) DEFAULT 0, -- 0 = No, 1 = Yes
+  return_notified  NUMBER(1) DEFAULT 0, -- 0 = No, 1 = Yes
+  overdue_notified NUMBER(1) DEFAULT 0, -- 0 = No, 1 = Yes
   CONSTRAINT fk_issue_copy
     FOREIGN KEY (copy_id) REFERENCES Book_Copy (copy_id),
   CONSTRAINT fk_issue_member

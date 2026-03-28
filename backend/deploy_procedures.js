@@ -1,10 +1,14 @@
+require('dotenv').config({ path: require('path').join(__dirname, '..', '.env') });
 const db = require('./db');
 const fs = require('fs');
 const path = require('path');
 
 async function deployProcs() {
-  const sqlFile = fs.readFileSync(path.join(__dirname, '..', 'sql', 'triggers.sql'), 'utf-8');
-  const commands = sqlFile.split(/(\r?\n)\/(\r?\n)/).filter(c => c.trim() && c.trim() !== '/' && c !== 'COMMIT;');
+  let sqlFile = fs.readFileSync(path.join(__dirname, '..', 'sql', 'procedures.sql'), 'utf-8');
+  
+  // Inject environment variables into SQL templates
+  sqlFile = sqlFile.replace(/{{__FINE_RATE__}}/g, process.env.FINE_RATE_RS || 50);
+  sqlFile = sqlFile.replace(/{{__LOAN_PERIOD__}}/g, process.env.LOAN_PERIOD_MINUTES || 1);
   
   const conn = await db.getConnection();
   try {

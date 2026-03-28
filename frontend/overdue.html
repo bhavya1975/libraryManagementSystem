@@ -22,10 +22,11 @@
             <th>Issue Date</th>
             <th>Due Date</th>
             <th>Minutes Overdue</th>
+            <th>Current Fine</th>
           </tr>
         </thead>
         <tbody id="tbody">
-          <tr><td colspan="7">Loading...</td></tr>
+          <tr><td colspan="8">Loading...</td></tr>
         </tbody>
       </table>
     </div>
@@ -38,7 +39,7 @@
         const data = await res.json();
         const tbody = document.getElementById('tbody');
         if (data.length === 0) {
-          tbody.innerHTML = '<tr><td colspan="7">No overdue books right now!</td></tr>';
+          tbody.innerHTML = '<tr><td colspan="8">No overdue books right now!</td></tr>';
           return;
         }
         tbody.innerHTML = data.map(r => `
@@ -50,10 +51,11 @@
             <td>${r.issue_date ? r.issue_date.substring(0, 10) : ''}</td>
             <td>${r.due_date ? r.due_date.substring(0, 10) : ''}</td>
             <td style="color: var(--danger); font-weight: bold;">${r.minutes_overdue} min</td>
+            <td style="color: var(--danger); font-weight: bold;">₹${r.fine_amount}</td>
           </tr>
         `).join('');
       } catch (e) {
-        document.getElementById('tbody').innerHTML = '<tr><td colspan="7">Error loading overdue books</td></tr>';
+        document.getElementById('tbody').innerHTML = '<tr><td colspan="8">Error loading overdue books</td></tr>';
       }
     }
     load();

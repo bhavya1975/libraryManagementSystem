@@ -109,10 +109,23 @@ exports.getMemberIssuedBooks = async (req, res) => {
     const conn = await db.getConnection();
     try {
       const sql = `
-        SELECT i.issue_id, b.title, c.copy_id, i.issue_date, i.due_date, i.return_date, 
-               NVL(f.amount, 0) AS fine_amount, f.paid_status
+        WITH CopySeq AS (
+          SELECT copy_id, book_id, ROW_NUMBER() OVER (PARTITION BY book_id ORDER BY copy_id) AS copy_number
+          FROM Book_Copy
+        )
+        SELECT i.issue_id, b.title, cs.copy_number, c.copy_id, i.issue_date, i.due_date, i.return_date, 
+               CASE 
+                 WHEN i.return_date IS NOT NULL THEN NVL(f.amount, 0)
+                 WHEN SYSDATE > i.due_date THEN 
+                   CASE 
+                     WHEN FLOOR((SYSDATE - i.due_date) * 24 * 60) >= 1 THEN FLOOR((SYSDATE - i.due_date) * 24 * 60) * ${process.env.FINE_RATE_RS || 50}
+                     ELSE 0
+                   END
+                 ELSE 0
+               END AS fine_amount, f.paid_status
         FROM Issue_Record i
         JOIN Book_Copy c ON i.copy_id = c.copy_id
+        JOIN CopySeq cs ON c.copy_id = cs.copy_id
         JOIN Book b ON c.book_id = b.book_id
         LEFT JOIN Fine f ON i.issue_id = f.issue_id
         WHERE i.member_id = :member_id

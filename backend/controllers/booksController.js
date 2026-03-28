@@ -289,14 +289,52 @@ exports.deleteBook = async (req, res) => {
   try {
     const conn = await db.getConnection();
     try {
+      // 0. Safety Check: Is it currently issued?
+      const checkIssuedSql = `
+        SELECT COUNT(*) AS issued_count 
+        FROM Book_Copy 
+        WHERE book_id = :book_id AND status = 'issued'
+      `;
+      const checkResult = await conn.execute(checkIssuedSql, { book_id: bookId });
+      const issuedCount = checkResult.rows[0].ISSUED_COUNT || 0;
+
+      if (issuedCount > 0) {
+        return res.status(400).json({ 
+          message: 'Safety Guard Triggered', 
+          error: `Cannot delete book! ${issuedCount} copies are currently issued to members. Please process their returns first.` 
+        });
+      }
+
+      // 1. Delete fines for all history of this book's copies
+      await conn.execute(`
+        DELETE FROM Fine 
+        WHERE issue_id IN (
+          SELECT issue_id 
+          FROM Issue_Record 
+          WHERE copy_id IN (SELECT copy_id FROM Book_Copy WHERE book_id = :book_id)
+        )`, { book_id: bookId }, { autoCommit: false });
+
+      // 2. Delete all issue records for this book's copies
+      await conn.execute(`
+        DELETE FROM Issue_Record 
+        WHERE copy_id IN (SELECT copy_id FROM Book_Copy WHERE book_id = :book_id)`, 
+        { book_id: bookId }, { autoCommit: false });
+
+      // 3. Delete all physical copies of this book
       await conn.execute('DELETE FROM Book_Copy WHERE book_id = :book_id', { book_id: bookId }, { autoCommit: false });
+      
+      // 4. Delete author associations
       await conn.execute('DELETE FROM Book_Author WHERE book_id = :book_id', { book_id: bookId }, { autoCommit: false });
+      
+      // 5. Delete the book record itself
       await conn.execute('DELETE FROM Book WHERE book_id = :book_id', { book_id: bookId }, { autoCommit: false });
+      
       await conn.commit();
       res.json({ message: 'Book deleted successfully' });
     } catch (err) {
+      console.error(`[DELETE ERROR] ID ${bookId}:`, err);
       await conn.rollback();
-      throw err;
+      res.status(500).json({ message: 'Error deleting book', error: err.message });
     } finally {
       await conn.close();
     }
