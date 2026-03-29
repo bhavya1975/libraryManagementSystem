@@ -28,7 +28,7 @@ BEGIN
 
     v_amount := CASE 
       WHEN :NEW.return_date > :NEW.due_date
-      THEN ROUND((:NEW.return_date - :NEW.due_date) * 24 * 60) * 100
+      THEN ROUND((:NEW.return_date - :NEW.due_date) * 24 * 60) * {{__FINE_RATE__}}
       ELSE 0
     END;
 

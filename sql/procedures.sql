@@ -1,4 +1,5 @@
--- Oracle PL/SQL stored procedures for Library Management System
+-- PL/SQL stored procedures for Library Management System 
+
 
 -- Calculate fine based on days late and a fixed rate
 CREATE OR REPLACE PROCEDURE calculate_fine (
@@ -19,7 +20,7 @@ BEGIN
 
   IF v_due_date IS NULL THEN
     p_amount := 0;
-  ELSE
+  ELSE 
     -- explicitly apply 1 minute grace period and floor the minutes
     v_minutes_late := FLOOR((v_return_date - v_due_date) * 24 * 60);
     IF v_minutes_late >= 1 THEN

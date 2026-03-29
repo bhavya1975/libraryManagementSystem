@@ -3543,3 +3543,33 @@ INFO  [2026-03-29T17:28:14.608Z] GET /index.html - Status: 304 - 0ms
 INFO  [2026-03-29T17:28:14.619Z] GET /style.css - Status: 304 - 1ms
 INFO  [2026-03-29T17:28:14.620Z] GET /script.js - Status: 304 - 0ms
 INFO  [2026-03-29T17:28:14.628Z] GET /api/stats?role=user&member_id=1&t=1774805294626 - Status: 200 - 13ms
+INFO  [2026-03-29T17:30:13.705Z] GET / - Status: 200 - 7ms
+INFO  [2026-03-29T17:30:13.719Z] GET /style.css - Status: 304 - 1ms
+INFO  [2026-03-29T17:30:13.721Z] GET /script.js - Status: 304 - 1ms
+INFO  [2026-03-29T17:30:14.132Z] GET /api/stats?role=user&member_id=1&t=1774805414128 - Status: 200 - 108ms
+INFO  [2026-03-29T17:42:24.868Z] GET /my-overdue.html - Status: 304 - 1ms
+INFO  [2026-03-29T17:42:24.886Z] GET /style.css - Status: 304 - 1ms
+INFO  [2026-03-29T17:42:24.887Z] GET /script.js - Status: 304 - 0ms
+INFO  [2026-03-29T17:42:24.892Z] GET /api/members/1/issued - Status: 200 - 23ms
+INFO  [2026-03-29T17:44:22.646Z] GET /login.html - Status: 304 - 1ms
+INFO  [2026-03-29T17:44:22.658Z] GET /style.css - Status: 304 - 1ms
+INFO  [2026-03-29T17:44:22.660Z] GET /script.js - Status: 304 - 0ms
+INFO  [2026-03-29T17:44:22.664Z] GET /api/members - Status: 304 - 8ms
+INFO  [2026-03-29T17:44:22.665Z] GET /api/librarians - Status: 304 - 35ms
+INFO  [2026-03-29T17:44:32.315Z] GET /index.html - Status: 304 - 0ms
+INFO  [2026-03-29T17:44:32.338Z] GET /style.css - Status: 304 - 1ms
+INFO  [2026-03-29T17:44:32.339Z] GET /script.js - Status: 304 - 1ms
+INFO  [2026-03-29T17:44:32.343Z] GET /api/stats?role=admin&member_id=21&t=1774806272342 - Status: 200 - 12ms
+INFO  [2026-03-29T17:44:38.229Z] GET /search-book.html - Status: 304 - 0ms
+INFO  [2026-03-29T17:44:38.243Z] GET /style.css - Status: 304 - 1ms
+INFO  [2026-03-29T17:44:38.244Z] GET /script.js - Status: 304 - 1ms
+INFO  [2026-03-29T17:44:38.252Z] GET /api/books? - Status: 200 - 5ms
+INFO  [2026-03-29T17:44:49.972Z] DELETE /api/books/22 - Status: 200 - 45ms
+  Action Data: {}
+INFO  [2026-03-29T17:44:50.953Z] GET /api/books? - Status: 200 - 7ms
+ERROR [2026-03-29T17:44:54.653Z] DELETE /api/books/21 - Status: 400 - 4ms
+  Action Data: {}
+INFO  [2026-03-29T17:44:55.637Z] GET /api/books? - Status: 304 - 6ms
+ERROR [2026-03-29T17:44:59.053Z] DELETE /api/books/21 - Status: 400 - 3ms
+  Action Data: {}
+INFO  [2026-03-29T17:45:00.439Z] GET /api/books? - Status: 304 - 6ms
