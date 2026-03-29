@@ -90,7 +90,6 @@
     .activity-details { flex: 1; }
     .activity-details p { font-size: 0.95rem; color: var(--text-main); margin-bottom: 0.3rem; }
     .activity-details span { font-size: 0.8rem; color: var(--text-muted); }
-    .activity-time { font-size: 0.9rem; color: var(--text-muted); font-weight: 500; }
   </style>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="script.js"></script>
@@ -218,7 +217,6 @@
                           <p><strong>${role === 'admin' ? (act.MEMBER_NAME || act.member_name) : 'You'}</strong> issued <strong>"${act.BOOK_TITLE || act.book_title}"</strong></p>
                           <span>New book issue recorded</span>
                       </div>
-                      <div class="activity-time">${act.ACTIVITY_TIME || act.activity_time}</div>
                   `;
                   activityEl.appendChild(item);
               });
