@@ -259,7 +259,7 @@ exports.addCopies = async (req, res) => {
   const bookId = parseInt(req.params.id);
   const { number_of_copies = 1 } = req.body;
   if (!bookId || number_of_copies < 1) return res.status(400).json({ message: 'Invalid data' });
-  
+
   try {
     const conn = await db.getConnection();
     try {
@@ -299,9 +299,9 @@ exports.deleteBook = async (req, res) => {
       const issuedCount = checkResult.rows[0].ISSUED_COUNT || 0;
 
       if (issuedCount > 0) {
-        return res.status(400).json({ 
-          message: 'Safety Guard Triggered', 
-          error: `Cannot delete book! ${issuedCount} copies are currently issued to members. Please process their returns first.` 
+        return res.status(400).json({
+          message: 'Safety Guard Triggered',
+          error: `Cannot delete book! ${issuedCount} copies are currently issued to members. Please process their returns first.`
         });
       }
 
@@ -317,18 +317,18 @@ exports.deleteBook = async (req, res) => {
       // 2. Delete all issue records for this book's copies
       await conn.execute(`
         DELETE FROM Issue_Record 
-        WHERE copy_id IN (SELECT copy_id FROM Book_Copy WHERE book_id = :book_id)`, 
+        WHERE copy_id IN (SELECT copy_id FROM Book_Copy WHERE book_id = :book_id)`,
         { book_id: bookId }, { autoCommit: false });
 
       // 3. Delete all physical copies of this book
       await conn.execute('DELETE FROM Book_Copy WHERE book_id = :book_id', { book_id: bookId }, { autoCommit: false });
-      
+
       // 4. Delete author associations
       await conn.execute('DELETE FROM Book_Author WHERE book_id = :book_id', { book_id: bookId }, { autoCommit: false });
-      
+
       // 5. Delete the book record itself
       await conn.execute('DELETE FROM Book WHERE book_id = :book_id', { book_id: bookId }, { autoCommit: false });
-      
+
       await conn.commit();
       res.json({ message: 'Book deleted successfully' });
     } catch (err) {
@@ -348,9 +348,9 @@ exports.deleteBook = async (req, res) => {
 exports.updateBook = async (req, res) => {
   const bookId = parseInt(req.params.id);
   const { title, isbn, publisher, publication_year } = req.body;
-  
+
   if (!bookId || !title || !isbn) return res.status(400).json({ message: 'book_id, title, isbn required' });
-  
+
   try {
     const conn = await db.getConnection();
     try {

@@ -140,7 +140,7 @@
           // Update Summary Cards
           if (role === 'admin') {
               document.getElementById('stat-users').innerText = data.users ?? 0;
-              document.getElementById('stat-books').innerText = data.totalBooks ?? 0;
+              document.getElementById('stat-books').innerText = data.totalBooks ?? data.totalbooks ?? 0;
               document.getElementById('stat-borrowed').innerText = data.borrowed ?? 0;
           } else {
               // For user, show personal stats
@@ -152,9 +152,7 @@
               document.querySelector('.summary-card:nth-child(2) .label').innerText = 'Pending returns';
               document.getElementById('stat-books').innerText = data.user_overdue ?? 0;
 
-              document.querySelector('.summary-card:nth-child(3) h4').innerText = 'Library Size';
-              document.querySelector('.summary-card:nth-child(3) .label').innerText = 'Total collections';
-              document.getElementById('stat-borrowed').innerText = data.totalBooks ?? 0;
+              document.querySelector('.summary-card:nth-child(3)').style.display = 'none';
           }
           
           console.log("Dashboard Stats Received:", data);
