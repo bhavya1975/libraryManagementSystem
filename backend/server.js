@@ -2,7 +2,6 @@ const express = require('express');
 const path = require('path');
 const bodyParser = require('body-parser');
 const cors = require('cors');
-const fs = require('fs');
 
 const bookRoutes = require('./routes/bookRoutes');
 const memberRoutes = require('./routes/memberRoutes');
@@ -14,44 +13,7 @@ app.use(cors());
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
-// Setup logging directory and file
-const logDir = path.join(__dirname, '..', 'logs');
-if (!fs.existsSync(logDir)) {
-  fs.mkdirSync(logDir);
-}
-const logFile = path.join(logDir, 'app.log');
-
-// Action & Error Logger Middleware
-app.use((req, res, next) => {
-  const start = Date.now();
-  const timestamp = new Date().toISOString();
-  
-  res.on('finish', () => {
-    const duration = Date.now() - start;
-    const isError = res.statusCode >= 400;
-    
-    let logLine = `[${timestamp}] ${req.method} ${req.originalUrl} - Status: ${res.statusCode} - ${duration}ms\n`;
-    
-    if (['POST', 'PUT', 'DELETE'].includes(req.method)) {
-      logLine += `  Action Data: ${JSON.stringify(req.body)}\n`;
-    }
-    
-    const prefix = isError ? 'ERROR ' : 'INFO  ';
-    logLine = prefix + logLine;
-    
-    if (isError) {
-      console.error(logLine.trim());
-    } else {
-      console.log(logLine.trim());
-    }
-    
-    fs.appendFile(logFile, logLine, (err) => {
-      if (err) console.error('Failed to write to log file', err);
-    });
-  });
-  
-  next();
-});
+// Logging removed - no longer saving to file
 
 // Serve the new premium frontend from ../frontend
 app.use(express.static(path.join(__dirname, '..', 'frontend')));

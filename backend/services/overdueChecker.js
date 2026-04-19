@@ -1,8 +1,5 @@
 const db = require('../db');
 const emailService = require('./emailService');
-
-
-
 async function checkAndNotifyOverdue() {
   const conn = await db.getConnection();
   try {
@@ -21,29 +18,28 @@ async function checkAndNotifyOverdue() {
         AND ir.due_date < SYSDATE
         AND NVL(ir.overdue_notified, 0) = 0
     `;
-
     const result = await conn.execute(getNewOverdueSql);
     const overdueRecords = result.rows;
 
     if (overdueRecords.length === 0) return;
 
     for (const record of overdueRecords) {
-        const issueId = record.ISSUE_ID || record.issue_id;
-        console.log(`[CHECKER] Sending urgent overdue notice for issue ${issueId}...`);
+      const issueId = record.ISSUE_ID || record.issue_id;
+      console.log(`[CHECKER] Sending urgent overdue notice for issue ${issueId}...`);
 
-        const sent = await emailService.sendOverdueNotification(
-            record.MEMBER_EMAIL || record.member_email,
-            record.MEMBER_NAME || record.member_name,
-            record.BOOK_TITLE || record.book_title
+      const sent = await emailService.sendOverdueNotification(
+        record.MEMBER_EMAIL || record.member_email,
+        record.MEMBER_NAME || record.member_name,
+        record.BOOK_TITLE || record.book_title
+      );
+
+      if (sent) {
+        await conn.execute(
+          `UPDATE Issue_Record SET overdue_notified = 1 WHERE issue_id = :id`,
+          { id: issueId },
+          { autoCommit: true }
         );
-
-        if (sent) {
-            await conn.execute(
-                `UPDATE Issue_Record SET overdue_notified = 1 WHERE issue_id = :id`,
-                { id: issueId },
-                { autoCommit: true }
-            );
-        }
+      }
     }
   } catch (err) {
     console.error('[CHECKER ERROR] Failed during overdue email sweep:', err.message);
@@ -58,10 +54,10 @@ async function checkAndNotifyOverdue() {
  */
 function startOverdueMonitor(intervalMs = 30000) { // Default every 30 seconds
   console.log(`[SYS] Overdue Automated Email Monitor started. Tick: ${intervalMs}ms`);
-  
+
   // Initial run after a short delay
   setTimeout(checkAndNotifyOverdue, 5000);
-  
+
   // Repeating interval
   setInterval(checkAndNotifyOverdue, intervalMs);
 }
